@@ -11,25 +11,7 @@ export default function App() {
   //state creates state for component
   const [todos, setTodos] = useState([]);
 
-  const getData = async () => {
-    try {
-      const todos = await AsyncStorage.getItem('todos')
-      if(todos != null){
-        setTodos(JSON.parse(todos))
-      }
-    } catch(e) {
-      console.log(e)
-    }
-  }
-
-  const storeData = async (todos) => {
-    try {
-      const stringifyTodos = JSON.stringify(todos)
-      await AsyncStorage.setItem('todos', stringifyTodos)
-    } catch (e) {
-      console.log(e)
-    }
-  }
+  //-------------------------------------------------------------------------------------------------------
 
   //effect runs code at every render (also when the state changes)
   useEffect(() => {
@@ -40,14 +22,38 @@ export default function App() {
     storeData(todos);
   }, [todos]);
 
+  //-------------------------------------------------------------------------------------------------------
+
+  //load data from local storage
+  const getData = async () => {
+    try {
+      const todos = await AsyncStorage.getItem('todos')
+      if(todos != null){
+        setTodos(JSON.parse(todos))
+      }
+    } catch(e) {
+      console.log(e)
+    }
+  }
+  
+  //save data in local storage
+  const storeData = async (todos) => {
+    try {
+      const stringifyTodos = JSON.stringify(todos)
+      await AsyncStorage.setItem('todos', stringifyTodos)
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
   //delete todo
-  const pressHandler = (key) => {
+  const deleteHandler = (key) => {
     Alert.alert(
       '',
       'Do you really want to delete this Todo?',
       [
       {text: 'Sure', onPress: () => {
-        setTodos((prevTodos) => {
+        setTodos(prevTodos => {
           return prevTodos.filter(todo => todo.key != key);
         });
       }
@@ -55,7 +61,14 @@ export default function App() {
       {text: 'No, keep it'}
       ]
     )
+  }
 
+  //set todo as completed
+  const completeHandler = key => {
+    const updatedTodo = todos.map(todo => {
+      return todo.key == key ? {...todo, completed: !todo.completed} : todo
+    })
+    setTodos(updatedTodo)  
   }
 
   //add todo
@@ -71,7 +84,7 @@ export default function App() {
           ]
         )
         return [
-          {text: text, key: id},
+          {text: text, completed: false , key: id},
           ...prevTodos
         ]; 
       });
@@ -86,6 +99,8 @@ export default function App() {
     }
   }
 
+  //-------------------------------------------------------------------------------------------------------
+
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={styles.container}>
@@ -98,14 +113,13 @@ export default function App() {
             <FlatList
               data={todos}
               renderItem={( {item} ) => (
-                // <Text>{item.text}</Text>
-                <TodoItem item={item} pressHandler={pressHandler}/>
+                <TodoItem item={item} deleteHandler={deleteHandler} completeHandler={completeHandler}/>
               )}
             />
           </View>
         </View>
 
-        <TouchableOpacity onPress={() => setTodos([])}>
+        <TouchableOpacity style={styles.deleteAll} onPress={() => setTodos([])}>
           <MaterialIcons name='delete' size={55} color='red'/>
           <Text>DELETE ALL TODOS</Text>
         </TouchableOpacity>
@@ -123,13 +137,17 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 40,
+    // backgroundColor: 'yellow'
   },
   list: {
     flex: 1,
     marginTop: 20,
+    // backgroundColor: 'red'
+  },
+  deleteAll: {
+    // backgroundColor: 'blue',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 });
-
-//textDecorationLine: todo?.completed ? 'linethrough' : 'none'
-//!todo?.completed && if todo is not completed
-//add btn to mark as completed 27:00
